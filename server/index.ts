@@ -2,8 +2,10 @@ import express from 'express';
 import cors from 'cors';
 import dns from 'dns';
 import net from 'net';
-// FIX: The `dnsbl` library uses named exports. Using a namespace import `* as dnsbl` makes the usage `dnsbl.lookup` correct and resolves cascading type errors that were reported on a different line.
-import * as dnsbl from 'dnsbl';
+// FIX: The `dnsbl` library is a CJS module without proper type definitions.
+// Using `require` avoids ES module interop issues that can cause cascading
+// type errors, which was causing the build to fail on `app.use(express.json())`.
+const dnsbl = require('dnsbl');
 
 const app = express();
 const port = 3001;

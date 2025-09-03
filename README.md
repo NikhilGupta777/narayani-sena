@@ -49,4 +49,27 @@ Once both are running, the frontend application will be able to communicate with
 
 ## Deployment on AWS Amplify
 
-This project is configured for deployment on AWS Amplify. The `amplify.yml` file defines the build steps for both the frontend and the backend. In the Amplify Console, you can connect your repository, and it will use this configuration to build and deploy your application. You will need to configure the backend part as a "Compute" service pointing to the `/server` directory.
+This project is now configured for a monorepo deployment on AWS Amplify using the `amplify.yml` build specification.
+
+### Build Configuration (`amplify.yml`)
+
+The `amplify.yml` file at the root of the project tells Amplify how to build both the frontend and backend:
+
+-   **Frontend:** It installs dependencies and runs `npm run build` in the root directory, which builds the Vite React app into the `/dist` folder.
+-   **Backend:** It navigates into the `/server` directory, installs dependencies, and runs `npm run build`, which compiles the TypeScript server into the `/server/dist` folder.
+
+Amplify will host the frontend as a static web app and the backend as a Node.js compute service.
+
+### Required: Configure API Rewrite Rule
+
+For the deployed frontend to communicate with the backend, you **must** configure a rewrite rule in the AWS Amplify Console after deployment.
+
+1.  In your Amplify app, go to **App settings > Rewrites and redirects**.
+2.  Click **Add rule**.
+3.  Set the following:
+    -   **Source address:** `/api/<*>`
+    -   **Target address:** The URL of your deployed backend service. You can find this URL in the **Backend environments** tab of your Amplify app.
+    -   **Type:** `200 (Rewrite)`
+4.  Save the rule.
+
+This rule will proxy all requests from `your-app-domain.com/api/*` to your backend server, allowing the email validation feature to work in production.
