@@ -2,17 +2,22 @@ import express from 'express';
 import cors from 'cors';
 import dns from 'dns';
 import net from 'net';
-// FIX: The `dnsbl` library is a CJS module without proper type definitions.
-// Using `import ... = require(...)` is the TypeScript-specific syntax for importing
-// CommonJS modules, which can resolve cascading type errors that were manifesting
-// on the `app.use(express.json())` line.
-import dnsbl = require('dnsbl');
+import * as dnsbl from 'dnsbl';
+import { GoogleGenAI, Modality, GenerateContentResponse } from '@google/genai';
+
+// Initialize Gemini AI
+if (!process.env.API_KEY) {
+  throw new Error("API_KEY environment variable not set.");
+}
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 
 const app = express();
 const port = 3001;
 
+// Increased payload limit for base64 image data
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 interface ValidationResult {
   valid: boolean;
@@ -88,9 +93,6 @@ const checkSmtp = (email: string, domain: string): Promise<ValidationResult> => 
     });
 };
 
-// FIX: The `dnsbl.lookup` function is callback-based, not promise-based.
-// It was being incorrectly used with `await`, causing a cascading type error that manifested
-// on `app.use(express.json())`. This has been fixed by wrapping the call in a Promise.
 // 3. DNS Blacklist Check
 const checkDnsbl = (domain: string): Promise<ValidationResult> => {
     return new Promise(async (resolve) => {
@@ -101,13 +103,8 @@ const checkDnsbl = (domain: string): Promise<ValidationResult> => {
             }
             const mailServerIp = (await dns.promises.resolve(mxRecords[0].exchange))[0];
 
-            // FIX: The type definition for the dnsbl.lookup callback indicates the
-            // second argument (`isBlacklisted`) is optional (`boolean | undefined`). 
-            // The signature has been corrected to `isBlacklisted?: boolean` to resolve a 
-            // cascading type error that was incorrectly reported on `app.use(express.json())`.
             dnsbl.lookup(mailServerIp, 'zen.spamhaus.org', (err: Error | null, isBlacklisted?: boolean) => {
                 if (err) {
-                    // Per original logic, treat lookup error as non-blocking/reputable
                     return resolve({ valid: true, message: 'Could not verify domain reputation.' });
                 }
                 if (isBlacklisted) {
@@ -116,12 +113,18 @@ const checkDnsbl = (domain: string): Promise<ValidationResult> => {
                 resolve({ valid: true, message: 'Domain has a clean reputation.' });
             });
         } catch (error) {
-            // This catches errors from dns.promises calls
             resolve({ valid: true, message: 'Could not verify domain reputation.' });
         }
     });
 };
 
+// --- API Endpoints ---
+
+const apiErrorHandler = (res: express.Response, error: unknown, defaultMessage: string) => {
+  console.error(defaultMessage, error);
+  const message = error instanceof Error ? error.message : defaultMessage;
+  res.status(500).json({ error: message });
+}
 
 app.post('/api/validate-email', async (req, res) => {
   const { email } = req.body;
@@ -136,7 +139,6 @@ app.post('/api/validate-email', async (req, res) => {
 
   try {
     const mxCheck = await checkMxRecords(domain);
-    // Only proceed if MX records are valid
     const smtpCheck = mxCheck.valid ? await checkSmtp(email, domain) : { valid: false, message: 'Cannot perform SMTP check without valid MX records.' };
     const dnsblCheck = mxCheck.valid ? await checkDnsbl(domain) : { valid: false, message: 'Cannot perform DNSBL check without valid MX records.' };
 
@@ -146,9 +148,134 @@ app.post('/api/validate-email', async (req, res) => {
       dnsblCheck,
     });
   } catch (error) {
-    res.status(500).json({ error: 'An unexpected error occurred during validation.' });
+    apiErrorHandler(res, error, 'An unexpected error occurred during validation.');
   }
 });
+
+app.post('/api/generate-image', async (req, res) => {
+    try {
+        const { prompt, numberOfImages, aspectRatio, artStyle, negativePrompt } = req.body;
+        let finalPrompt = prompt;
+        if (artStyle && artStyle !== 'None') finalPrompt = `${prompt}, in the style of ${artStyle}`;
+        if (negativePrompt) finalPrompt += `. Avoid the following: ${negativePrompt}.`;
+
+        const response = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001',
+            prompt: finalPrompt,
+            config: {
+                numberOfImages,
+                outputMimeType: 'image/png',
+                aspectRatio,
+            },
+        });
+
+        if (!response.generatedImages || response.generatedImages.length === 0) {
+            return res.status(500).json({ error: "No images were generated. The request may have been blocked." });
+        }
+        
+        const images = response.generatedImages.map(img => `data:image/png;base64,${img.image.imageBytes}`);
+        res.json({ images });
+    } catch (error) {
+        apiErrorHandler(res, error, 'Failed to generate image.');
+    }
+});
+
+app.post('/api/edit-image', async (req, res) => {
+    try {
+        const { prompt, base64ImageData, mimeType, maskBase64 } = req.body;
+        
+        const parts = [
+          { inlineData: { data: base64ImageData, mimeType } },
+          ...(maskBase64 ? [{ inlineData: { data: maskBase64, mimeType: 'image/png' } }] : []),
+          { text: prompt },
+        ];
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image-preview',
+            contents: { parts: parts },
+            config: {
+                responseModalities: [Modality.IMAGE, Modality.TEXT],
+            },
+        });
+        
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const image = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                return res.json({ image });
+            }
+        }
+        res.status(500).json({ error: "No image was found in the model's response." });
+    } catch (error) {
+        apiErrorHandler(res, error, 'Failed to edit image.');
+    }
+});
+
+// For a real app, use a persistent store like Redis or a database
+const videoOperationsCache = new Map<string, any>();
+
+app.post('/api/generate-video', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        const operation = await ai.models.generateVideos({
+            model: 'veo-2.0-generate-001',
+            prompt: prompt,
+            config: { numberOfVideos: 1 }
+        });
+        res.json({ operationName: operation.name });
+    } catch (error) {
+        apiErrorHandler(res, error, 'Failed to start video generation.');
+    }
+});
+
+app.get('/api/video-status', async (req, res) => {
+    try {
+        const { operationName } = req.query;
+        if (typeof operationName !== 'string') {
+            return res.status(400).json({ error: "Operation name is required." });
+        }
+        
+        // FIX: The `getVideosOperation` method expects the parameter key to be `operation`, not `name`.
+        let operation = await ai.operations.getVideosOperation({ operation: { name: operationName } });
+        if (operation.done) {
+            videoOperationsCache.set(operationName, operation.response);
+            res.json({ status: 'complete', videoUrl: `/api/get-video?operationName=${operationName}` });
+        } else {
+            res.json({ status: 'processing' });
+        }
+    } catch(error) {
+        apiErrorHandler(res, error, 'Failed to get video status.');
+    }
+});
+
+app.get('/api/get-video', async (req, res) => {
+    try {
+        const { operationName } = req.query as { operationName: string };
+        const operationResponse = videoOperationsCache.get(operationName);
+        
+        const downloadLink = operationResponse?.generatedVideos?.[0]?.video?.uri;
+        if (!downloadLink) {
+            return res.status(404).json({ error: 'Video not found or processing not complete.' });
+        }
+        
+        const videoApiResponse = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+        if (!videoApiResponse.ok || !videoApiResponse.body) {
+            throw new Error(`Failed to download video file. Status: ${videoApiResponse.status}`);
+        }
+        
+        res.setHeader('Content-Type', 'video/mp4');
+        const reader = videoApiResponse.body.getReader();
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+        }
+        res.end();
+
+    } catch(error) {
+        apiErrorHandler(res, error, 'Failed to stream video.');
+    }
+});
+
 
 app.listen(port, () => {
   console.log(`Email validation server listening at http://localhost:${port}`);
