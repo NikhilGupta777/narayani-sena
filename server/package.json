@@ -2,9 +2,11 @@
   "name": "narayani-sena-server",
   "version": "1.0.0",
   "description": "Backend server for Narayani Sena workspace email validation.",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
-    "start": "ts-node index.ts"
+    "start": "node dist/index.js",
+    "dev": "ts-node index.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "cors": "^2.8.5",

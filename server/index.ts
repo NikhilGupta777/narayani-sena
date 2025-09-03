@@ -98,7 +98,11 @@ const checkDnsbl = (domain: string): Promise<ValidationResult> => {
             }
             const mailServerIp = (await dns.promises.resolve(mxRecords[0].exchange))[0];
 
-            dnsbl.lookup(mailServerIp, 'zen.spamhaus.org', (err: Error | null, isBlacklisted: boolean) => {
+            // FIX: The type definition for the dnsbl.lookup callback indicates the
+            // second argument (`isBlacklisted`) is optional (`boolean | undefined`). 
+            // The signature has been corrected to `isBlacklisted?: boolean` to resolve a 
+            // cascading type error that was incorrectly reported on `app.use(express.json())`.
+            dnsbl.lookup(mailServerIp, 'zen.spamhaus.org', (err: Error | null, isBlacklisted?: boolean) => {
                 if (err) {
                     // Per original logic, treat lookup error as non-blocking/reputable
                     return resolve({ valid: true, message: 'Could not verify domain reputation.' });
