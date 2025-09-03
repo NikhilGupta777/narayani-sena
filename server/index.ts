@@ -3,9 +3,10 @@ import cors from 'cors';
 import dns from 'dns';
 import net from 'net';
 // FIX: The `dnsbl` library is a CJS module without proper type definitions.
-// Using `require` avoids ES module interop issues that can cause cascading
-// type errors, which was causing the build to fail on `app.use(express.json())`.
-const dnsbl = require('dnsbl');
+// Using `import ... = require(...)` is the TypeScript-specific syntax for importing
+// CommonJS modules, which can resolve cascading type errors that were manifesting
+// on the `app.use(express.json())` line.
+import dnsbl = require('dnsbl');
 
 const app = express();
 const port = 3001;
