@@ -1,150 +1,42 @@
 
 import React, { useState } from 'react';
-import { EmailIcon, CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, ClockIcon } from './icons';
-
-type ValidationStatus = 'pending' | 'success' | 'failure' | 'warning';
-
-interface ValidationStep {
-    name: string;
-    status: ValidationStatus;
-    message: string;
-}
-
-const initialValidationSteps: ValidationStep[] = [
-    { name: 'Syntax & RFC Check', status: 'pending', message: 'Awaiting input...' },
-    { name: 'Disposable Domain Detection', status: 'pending', message: 'Awaiting syntax check...' },
-    { name: 'Role-Based Account Filter', status: 'pending', message: 'Awaiting domain analysis...' },
-    { name: 'MX Record Check', status: 'pending', message: 'Awaiting server...' },
-    { name: 'SMTP Handshake', status: 'pending', message: 'Awaiting server...' },
-    { name: 'DNS Blacklist Check', status: 'pending', message: 'Awaiting server...' },
-];
-
-const disposableDomains = new Set(['10minutemail.com', 'temp-mail.org', 'guerrillamail.com', 'mailinator.com', 'throwawaymail.com', 'getnada.com', 'maildrop.cc']);
-const roleBasedPrefixes = new Set(['admin', 'support', 'sales', 'info', 'noreply', 'contact', 'abuse', 'postmaster', 'webmaster', 'help', 'team']);
+import { EmailIcon, CheckCircleIcon, XCircleIcon } from './icons';
+import { validateEmail } from '../services/geminiService';
 
 
 const EmailValidator: React.FC = () => {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [steps, setSteps] = useState<ValidationStep[]>(initialValidationSteps);
-    const [finalVerdict, setFinalVerdict] = useState<{ score: number; verdict: string; color: string } | null>(null);
+    const [result, setResult] = useState<{ message: string; type: 'ok' | 'err' } | null>(null);
 
-    const updateStep = (index: number, status: ValidationStatus, message: string) => {
-        setSteps(prev => {
-            const newSteps = [...prev];
-            newSteps[index] = { ...newSteps[index], status, message };
-            return newSteps;
-        });
-    };
-    
     const handleValidation = async () => {
         if (!email || isLoading) return;
 
         setIsLoading(true);
-        setSteps(initialValidationSteps);
-        setFinalVerdict(null);
-        let score = 100;
-
-        // --- Step 1: Syntax & RFC Check (Client-side) ---
-        updateStep(0, 'pending', 'Checking format...');
-        const rfcRegex = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
-        if (!rfcRegex.test(email)) {
-            updateStep(0, 'failure', 'Invalid email format according to RFC standards.');
-            setFinalVerdict({ score: 0, verdict: 'Undeliverable', color: 'bg-red-500/20 text-red-300' });
+        setResult(null);
+        
+        // Basic client-side check first
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+        if (!re.test(email)) {
+            setResult({ message: 'Please enter a valid email address format.', type: 'err' });
             setIsLoading(false);
             return;
         }
-        updateStep(0, 'success', 'Email syntax is valid.');
-        const [localPart, domain] = email.split('@');
-        
-        // --- Step 2: Disposable Domain (Client-side) ---
-        if (disposableDomains.has(domain.toLowerCase())) {
-            updateStep(1, 'failure', 'This is a temporary/disposable email address.');
-            score = 0; // Critical failure
-        } else {
-            updateStep(1, 'success', 'Domain is not a known disposable provider.');
-        }
 
-        // --- Step 3: Role-Based Account (Client-side) ---
-        if (roleBasedPrefixes.has(localPart.toLowerCase())) {
-            updateStep(2, 'warning', `This is a role-based address (${localPart}@).`);
-            score -= 25;
-        } else {
-            updateStep(2, 'success', 'Address does not appear to be role-based.');
-        }
-
-        // If client-side checks fail critically, stop here.
-        if (score <= 0) {
-             setFinalVerdict({ score: 0, verdict: 'Undeliverable', color: 'bg-red-500/20 text-red-300' });
-             setIsLoading(false);
-             return;
-        }
-        
-        // --- Step 4, 5, 6: Server-Side Checks ---
         try {
-            updateStep(3, 'pending', 'Querying DNS for MX records...');
-            updateStep(4, 'pending', 'Attempting connection to mail server...');
-            updateStep(5, 'pending', 'Checking domain reputation...');
-
-            const response = await fetch('/api/validate-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `Server responded with status ${response.status}`);
+            const response = await validateEmail(email);
+            if (response.ok) {
+                setResult({ message: 'Email syntax appears valid and is ready for use.', type: 'ok' });
+            } else {
+                setResult({ message: `Validation failed: ${response.reason || 'Unknown reason'}.`, type: 'err' });
             }
-
-            const results = await response.json();
-            
-            // MX Check
-            updateStep(3, results.mxCheck.valid ? 'success' : 'failure', results.mxCheck.message);
-            if(!results.mxCheck.valid) score = 0;
-
-            // SMTP Check
-            updateStep(4, results.smtpCheck.valid ? 'success' : 'failure', results.smtpCheck.message);
-            if(!results.smtpCheck.valid) score = 0;
-
-            // DNSBL Check
-            updateStep(5, results.dnsblCheck.valid ? 'success' : 'warning', results.dnsblCheck.message);
-            if(!results.dnsblCheck.valid) score -= 20;
-
         } catch (error) {
-            const serverMessage = "Could not connect to the validation service. The backend may not be available.";
-            updateStep(3, 'failure', serverMessage);
-            updateStep(4, 'failure', serverMessage);
-            updateStep(5, 'failure', serverMessage);
-            score = 0;
-        }
-
-        // --- Final Verdict ---
-        score = Math.max(0, score);
-        let verdict = 'Deliverable';
-        let color = 'bg-green-500/20 text-green-300';
-        if (score < 50) {
-            verdict = 'Undeliverable';
-            color = 'bg-red-500/20 text-red-300';
-        } else if (score < 90) {
-            verdict = 'Risky';
-            color = 'bg-yellow-500/20 text-yellow-300';
-        }
-        setFinalVerdict({ score, verdict, color });
-
-        setIsLoading(false);
-    };
-
-    const StatusIcon = ({ status }: { status: ValidationStatus }) => {
-        switch (status) {
-            case 'success': return <CheckCircleIcon className="w-5 h-5 text-green-400" />;
-            case 'failure': return <XCircleIcon className="w-5 h-5 text-red-400" />;
-            case 'warning': return <ExclamationTriangleIcon className="w-5 h-5 text-yellow-400" />;
-            case 'pending': return isLoading ? <div className="w-4 h-4 border-2 border-slate-500 border-t-slate-300 rounded-full animate-spin"></div> : <ClockIcon className="w-5 h-5 text-slate-500" />;
-            default: return null;
+            setResult({ message: error instanceof Error ? error.message : 'An unknown error occurred.', type: 'err' });
+        } finally {
+            setIsLoading(false);
         }
     };
-
+    
     return (
         <div>
             <h3 className="text-lg font-semibold text-white">Advanced Email Validation</h3>
@@ -163,34 +55,23 @@ const EmailValidator: React.FC = () => {
                 </button>
             </div>
             
-            <div className="mt-6 border border-[rgba(255,255,255,0.08)] bg-black/10 rounded-xl p-4">
-                <h4 className="text-md font-semibold mb-3">Validation Report</h4>
-                <div className="space-y-3">
-                    {steps.map((step, index) => (
-                        <div key={index} className="flex items-start gap-3 text-sm">
-                            <div className="w-5 h-5 flex-shrink-0 mt-0.5"><StatusIcon status={step.status} /></div>
-                            <div>
-                                <p className="font-medium text-white">{step.name}</p>
-                                <p className="text-xs text-[#aeb3c7]">{step.message}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                {finalVerdict && (
-                    <div className="mt-4 pt-4 border-t border-[rgba(255,255,255,0.1)] flex justify-between items-center">
-                        <div className="text-sm font-bold">Overall Result:</div>
-                        <div className="flex items-center gap-2">
-                             <span className="text-sm font-medium text-white">Score: {finalVerdict.score}/100</span>
-                             <span className={`px-3 py-1 text-xs font-bold rounded-full ${finalVerdict.color}`}>
-                                {finalVerdict.verdict}
-                            </span>
-                        </div>
+            <div className="mt-6">
+                {isLoading && (
+                     <div className="text-center p-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-400 mx-auto"></div>
+                        <p className="mt-3 text-sm text-[#aeb3c7]">Performing validation checks...</p>
+                    </div>
+                )}
+                {result && (
+                    <div className={`flex items-center gap-3 p-4 rounded-xl border ${result.type === 'ok' ? 'bg-green-500/10 border-green-500/20 text-green-300' : 'bg-red-500/10 border-red-500/20 text-red-300'}`}>
+                        {result.type === 'ok' ? <CheckCircleIcon className="w-6 h-6 flex-shrink-0" /> : <XCircleIcon className="w-6 h-6 flex-shrink-0" />}
+                        <p className="text-sm font-medium">{result.message}</p>
                     </div>
                 )}
             </div>
+
              <p className="text-xs text-center text-[#aeb3c7] mt-3 px-2">
-                This tool performs live network checks which may take a few moments. For the backend setup, see `README.md`.
+                This tool performs a syntax check. Full deliverability checks require server configuration. See `README.md`.
             </p>
         </div>
     );

@@ -1,68 +1,58 @@
 # Narayani Sena Workspace
 
-This is a full-stack web application featuring a React frontend and a Node.js/Express backend for advanced features.
+This is a full-stack web application featuring a React/Vite frontend and a Node.js/Express backend that securely handles all AI API calls.
 
-## Running the Full-Stack Application
+## Running the Full-Stack Application Locally
 
 To run this project, you need to run both the frontend and the backend server concurrently.
 
-### 1. Running the Frontend
+### 1. Configure Environment Variables
 
-The frontend is built using Vite.
+The backend server requires your Gemini API key.
 
-1. **Navigate to the root directory:**
-   (You should be in the root of the project)
-
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server:**
-   This will start the frontend on `http://localhost:5173` (or the next available port).
-   ```bash
-   npm run dev
-   ```
+1.  Navigate to the `/server` directory.
+2.  Create a file named `.env`.
+3.  Add your API key to this file:
+    ```
+    API_KEY=your_gemini_api_key_here
+    ```
 
 ### 2. Running the Backend Server
-
-The backend server handles advanced, real-time email validation checks.
 
 1.  **Navigate to the server directory:**
     ```bash
     cd server
     ```
-
 2.  **Install dependencies:**
-    This will install Express, TypeScript, and other necessary packages.
     ```bash
     npm install
     ```
-
 3.  **Start the development server:**
-    This command runs the TypeScript server file directly using `ts-node`. The server will start on `http://localhost:3001`.
+    This command runs the TypeScript server using `ts-node`. The server will start on `http://localhost:3001`.
     ```bash
     npm run dev
     ```
 
-Once both are running, the frontend application will be able to communicate with the backend API to perform live email validation.
+### 3. Running the Frontend
+
+1.  **Navigate to the root project directory (if you are in `/server`, go back `cd ..`).**
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+3.  **Start the development server:**
+    This will start the frontend on `http://localhost:5173`. The Vite config is already set up to proxy API requests to your backend server running on port 3001.
+    ```bash
+    npm run dev
+    ```
 
 ## Deployment on AWS Amplify
 
-This project is configured for a monorepo deployment on AWS Amplify using the `amplify.yml` build specification.
+This project is configured for a monorepo deployment on AWS Amplify using the `amplify.yml` build specification. Amplify will host the frontend as a static web app and you will deploy the backend as a separate service (e.g., Amplify Functions, App Runner, or Elastic Beanstalk).
 
-### Build Configuration (`amplify.yml`)
+### CRITICAL: Amplify Hosting Setup
 
-The `amplify.yml` file at the root of the project tells Amplify how to build both the frontend and backend:
-
--   **Frontend:** It installs dependencies and runs `npm run build` in the root directory, which builds the Vite React app into the `/dist` folder.
--   **Backend:** It navigates into the `/server` directory, installs its dependencies, and runs `npm run build` to compile the TypeScript server into the `/server/dist` folder.
-
-Amplify will host the frontend as a static web app and the backend as a Node.js compute service.
-
-### CRITICAL: Deployment Steps
-
-Follow these steps carefully to deploy your application.
+Follow these steps carefully to deploy your frontend.
 
 #### Step 1: Enable Monorepo Support
 
@@ -74,7 +64,14 @@ The build error `Missing frontend definition in buildspec` usually means Amplify
 4.  Under **Repository settings**, find the **Monorepo** section and check the box for **"This is a monorepo app"**.
 5.  Save your changes. Amplify will now correctly find and use the `amplify.yml` file in the root of your repository.
 
-#### Step 2: Configure API Rewrite Rule
+#### Step 2: Set Environment Variables
+
+Your backend service needs the Gemini API key. In the configuration for your deployed backend service (e.g., in Amplify Functions or your chosen service), set the following environment variable:
+
+-   **Key:** `API_KEY`
+-   **Value:** `your_gemini_api_key_here`
+
+#### Step 3: Configure API Rewrite Rule
 
 For the deployed frontend to communicate with the backend, you **must** configure a rewrite rule after the first successful deployment.
 
@@ -82,8 +79,12 @@ For the deployed frontend to communicate with the backend, you **must** configur
 2.  Click **Add rule**.
 3.  Set the following:
     -   **Source address:** `/api/<*>`
-    -   **Target address:** The URL of your deployed backend service. You can find this URL in the **Backend environments** tab of your Amplify app. It will look something like `https://main.d12345.amplifybackend.com/<*>`.
+    -   **Target address:** The URL of your deployed backend service. It will look something like `https://your-backend-service-url.com/<*>`.
     -   **Type:** `200 (Rewrite)`
-4.  Save the rule.
+4.  **Add the Single Page App (SPA) redirect rule** if it doesn't exist. This rule should be **last**.
+    -   **Source address:** `</^[^.]+$|\\.(?!(css|gif|ico|jpg|jpeg|js|png|svg|txt|woff|woff2)$)([^.]+$)/>`
+    -   **Target address:** `/index.html`
+    -   **Type:** `200 (Rewrite)`
+5.  Save the rules.
 
-This rule will proxy all requests from `your-app-domain.com/api/*` to your backend server, allowing the email validation feature to work in production.
+This configuration will correctly proxy all frontend requests from `your-app-domain.com/api/*` to your backend server, allowing all features to work in production.
