@@ -1,14 +1,14 @@
 
 import React, { useState, useCallback } from 'react';
 import LandingPage from './components/LandingPage';
-import Workspace from './components/Workspace';
+import MainApp from './components/MainApp';
 import CanvasBackground from './components/CanvasBackground';
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'landing' | 'workspace'>('landing');
+  const [view, setView] = useState<'landing' | 'main'>('landing');
 
-  const enterWorkspace = useCallback(() => {
-    setView('workspace');
+  const enterMainApp = useCallback(() => {
+    setView('main');
   }, []);
 
   const goHome = useCallback(() => {
@@ -20,9 +20,9 @@ const App: React.FC = () => {
       <CanvasBackground />
       <div className="relative z-10">
         {view === 'landing' ? (
-          <LandingPage onEnterWorkspace={enterWorkspace} />
+          <LandingPage onEnterWorkspace={enterMainApp} />
         ) : (
-          <Workspace onGoHome={goHome} />
+          <MainApp onGoHome={goHome} />
         )}
       </div>
     </div>

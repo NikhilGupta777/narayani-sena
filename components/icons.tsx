@@ -94,3 +94,27 @@ export const ClockIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.75 10.25a.75.75 0 000-1.5h5.5a.75.75 0 000 1.5h-5.5z" clipRule="evenodd" />
     </svg>
 );
+
+export const CreativeSuiteIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" {...props}>
+        <path fillRule="evenodd" d="M10.868 2.884c.321.64.321 1.415 0 2.055L7.83 10.521l3.038 5.581c.321.64.094 1.455-.546 1.776-.64.321-1.455.094-1.776-.546L5.48 11.521l-3.038-5.581c-.321-.64-.094-1.455.546-1.776.64-.321 1.455-.094 1.776.546L7.83 9.479l3.038-5.595c.321-.64 1.135-.865 1.776-.546zM15.48 11.521l-3.038-5.581c-.321-.64-.094-1.455.546-1.776.64-.321 1.455-.094 1.776.546l3.038 5.581c.321.64.094 1.455-.546 1.776-.64.321-1.455.094-1.776-.546L15.48 9.479l-3.038 5.595c-.321.64-1.135.865-1.776.546.321.64.321 1.415 0 2.055l-3.038 5.581c-.321.64-.094 1.455.546 1.776.64.321 1.455-.094 1.776-.546l3.038-5.581 3.038 5.581c.321.64 1.135.865 1.776.546.64-.321.865-1.135.546-1.776l-3.038-5.581z" clipRule="evenodd" />
+    </svg>
+);
+
+export const EmailSuiteIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
+        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" />
+    </svg>
+);
+
+export const ListIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" {...props}>
+        <path fillRule="evenodd" d="M2 4.75A.75.75 0 012.75 4h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 4.75zM2 9.75A.75.75 0 012.75 9h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 9.75zM2 14.75A.75.75 0 012.75 14h14.5a.75.75 0 010 1.5H2.75A.75.75 0 012 14.75z" clipRule="evenodd" />
+    </svg>
+);
+
+export const AnalyticsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" {...props}>
+        <path d="M2 18a.75.75 0 00.75.75h14.5a.75.75 0 000-1.5H2.75A.75.75 0 002 18zM3 15.25a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zM3.75 8a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5zM9 15.25a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H9.75a.75.75 0 01-.75-.75zM9.75 4a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5zM15 15.25a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H15.75a.75.75 0 01-.75-.75zM15.75 10a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" />
+    </svg>
+);

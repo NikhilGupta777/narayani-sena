@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { FeatureIcon1, EditIcon, VideoIcon, DownloadIcon } from './icons';
+import { CheckCircleIcon, EmailIcon, ListIcon, AnalyticsIcon } from './icons';
 
-type Tool = 'dashboard' | 'image-gen' | 'image-edit' | 'video-gen' | 'downloader';
+type EmailTool = 'dashboard' | 'validator' | 'designer' | 'manager' | 'analytics';
 
-interface DashboardProps {
-    setActiveTool: (tool: Tool) => void;
+interface EmailDashboardProps {
+    setActiveTool: (tool: EmailTool) => void;
 }
 
 const ToolCard: React.FC<{
@@ -26,35 +26,40 @@ const ToolCard: React.FC<{
     </button>
 );
 
-
-const Dashboard: React.FC<DashboardProps> = ({ setActiveTool }) => {
+const EmailDashboard: React.FC<EmailDashboardProps> = ({ setActiveTool }) => {
     return (
         <div>
             <div className="border border-[rgba(255,255,255,0.08)] bg-gradient-to-b from-[rgba(255,255,255,0.02)] to-[rgba(255,255,255,0.01)] rounded-2xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-lg backdrop-saturate-[1.3]">
-                <h1 className="text-2xl font-bold text-white">Welcome, Devotee</h1>
+                <h1 className="text-2xl font-bold text-white">Email Seva Suite</h1>
                 <p className="text-[#aeb3c7] mt-2">
-                    This is your sacred workspace for digital seva. All tools are designed to assist in spreading Mahaprabhuji's message. Select a tool to begin.
+                    A dedicated space for devotee engagement. Validate email lists, design campaigns, and manage your subscribers.
                 </p>
             </div>
 
-            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-2 gap-6">
                 <ToolCard
-                    icon={<FeatureIcon1 />}
-                    title="AI Image Generation"
-                    description="Create devotional posters from text descriptions."
-                    onClick={() => setActiveTool('image-gen')}
+                    icon={<CheckCircleIcon className="w-7 h-7 text-[#8bb8ff]"/>}
+                    title="Email Validator"
+                    description="Verify devotee email addresses for better deliverability."
+                    onClick={() => setActiveTool('validator')}
                 />
                 <ToolCard
-                    icon={<EditIcon />}
-                    title="AI Image Editor"
-                    description="Upload and modify existing images with AI."
-                    onClick={() => setActiveTool('image-edit')}
+                    icon={<EmailIcon />}
+                    title="Campaign Designer"
+                    description="Design beautiful, automated emails for festivals."
+                    onClick={() => setActiveTool('designer')}
                 />
-                <div className="relative">
+                <ToolCard
+                    icon={<ListIcon className="w-7 h-7 text-[#aeb3c7]"/>}
+                    title="List Manager"
+                    description="View and manage your locally-stored subscriber list."
+                    onClick={() => setActiveTool('manager')}
+                />
+                 <div className="relative">
                     <ToolCard
-                        icon={<VideoIcon />}
-                        title="AI Video Generation"
-                        description="Produce short, divine videos for social media."
+                        icon={<AnalyticsIcon className="w-7 h-7 text-yellow-300"/>}
+                        title="Campaign Analytics"
+                        description="Track the performance of your email campaigns."
                         onClick={() => {}}
                         disabled={true}
                     />
@@ -62,15 +67,9 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTool }) => {
                         Coming Soon
                     </div>
                 </div>
-                <ToolCard
-                    icon={<DownloadIcon />}
-                    title="Content Downloader"
-                    description="Save online content for offline satsang use."
-                    onClick={() => setActiveTool('downloader')}
-                />
             </div>
         </div>
     );
 };
 
-export default Dashboard;
+export default EmailDashboard;

@@ -12,8 +12,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const app: express.Application = express();
 app.use(cors());
 // Increased payload limit for base64 image data
-// FIX: Explicitly providing a path resolves the 'No overload matches this call' error by helping TypeScript select the correct function signature.
-app.use('/', express.json({ limit: '10mb' }));
+// FIX: Removed path argument to resolve 'No overload matches this call' error. The path was causing a type signature mismatch.
+app.use(express.json({ limit: '15mb' }));
 
 // Simplified dummy endpoint as per user's provided code.
 app.post('/api/validate-email', async (req, res) => {
