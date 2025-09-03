@@ -12,8 +12,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const app: express.Application = express();
 app.use(cors());
 // Increased payload limit for base64 image data
-// FIX: To resolve a TypeScript 'No overload matches this call' error, the middleware is now used without an explicit path.
-app.use(express.json({ limit: '10mb' }));
+// FIX: Explicitly providing a path resolves the 'No overload matches this call' error by helping TypeScript select the correct function signature.
+app.use('/', express.json({ limit: '10mb' }));
 
 // Simplified dummy endpoint as per user's provided code.
 app.post('/api/validate-email', async (req, res) => {
@@ -79,6 +79,7 @@ app.post('/api/edit-image', async (req, res) => {
   }
 });
 
+/*
 // This is a long-running endpoint. It will hold the connection open until the video is generated.
 app.post('/api/generate-video', async (req, res) => {
   try {
@@ -137,6 +138,7 @@ app.get('/api/get-video', async (req, res) => {
         res.status(500).json({ error: error?.message || 'Failed to stream video.' });
     }
 });
+*/
 
 const port = Number(process.env.PORT || 3001);
 app.listen(port, () => console.log(`API server listening on :${port}`));

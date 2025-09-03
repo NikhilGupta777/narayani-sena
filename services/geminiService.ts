@@ -40,12 +40,14 @@ export const editImage = async (prompt: string, base64ImageData: string, mimeTyp
 
 // Video generation is now a single long-running request to the backend.
 // The `onProgress` callback is used to signal the start of the process.
+/*
 export const generateVideo = async (prompt: string, onProgress: (message: string) => void): Promise<string> => {
     onProgress("Sending request to server... This may take several minutes as the server processes the video.");
     const { videoUrl } = await postJSON<{ videoUrl: string }>('/api/generate-video', { prompt });
     onProgress("Video is ready!");
     return videoUrl; // This will be a relative URL to our backend proxy.
 };
+*/
 
 // Email validation now uses a simplified backend endpoint.
 export const validateEmail = async (email: string): Promise<{ ok: boolean; reason?: string }> => {

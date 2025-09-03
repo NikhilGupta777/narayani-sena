@@ -20,18 +20,6 @@ export const FeatureIcon1: React.FC<React.SVGProps<SVGSVGElement>> = (props) => 
     </svg>
 );
 
-export const FeatureIcon2: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg className="w-7 h-7 text-[#8bb8ff]" viewBox="0 0 24 24" aria-hidden="true" {...props}>
-        <path fill="currentColor" d="M2 6h20v2H2V6zm0 5h14v2H2v-2zm0 5h10v2H2v-2z" />
-    </svg>
-);
-
-export const FeatureIcon3: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg className="w-7 h-7 text-[#aeb3c7]" viewBox="0 0 24 24" aria-hidden="true" {...props}>
-        <path fill="currentColor" d="M12 3l4 4h-3v6h-2V7H8l4-4zm7 14H5v-2H3v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3h-2v2z" />
-    </svg>
-);
-
 export const DashboardIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg className="w-7 h-7 text-[#aeb3c7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
         <rect x="3" y="3" width="7" height="7"></rect>

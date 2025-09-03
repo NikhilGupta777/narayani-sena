@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
-import { BrandLogo, FeatureIcon1, FeatureIcon2, FeatureIcon3, VideoIcon, EmailIcon, DownloadIcon } from './icons';
+// FIX: Removed unused imports for 'FeatureIcon2' and 'FeatureIcon3' which do not exist in './icons'.
+import { BrandLogo, FeatureIcon1, VideoIcon, EmailIcon, DownloadIcon } from './icons';
 
 interface LandingPageProps {
   onEnterWorkspace: () => void;

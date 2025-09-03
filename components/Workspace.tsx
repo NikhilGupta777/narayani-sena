@@ -76,15 +76,17 @@ const Workspace: React.FC<WorkspaceProps> = ({ onGoHome }) => {
               {navigationItems.map(item => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTool(item.id as Tool)}
+                  onClick={() => item.id !== 'video-gen' && setActiveTool(item.id as Tool)}
+                  disabled={item.id === 'video-gen'}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors text-sm font-medium ${
                     activeTool === item.id
                       ? 'bg-[rgba(139,184,255,0.15)] text-white'
                       : 'text-[#aeb3c7] hover:bg-[rgba(255,255,255,0.04)] hover:text-white'
-                  }`}
+                  } ${item.id === 'video-gen' ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {item.icon}
                   <span>{item.label}</span>
+                  {item.id === 'video-gen' && <span className="text-xs ml-auto bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full">Soon</span>}
                 </button>
               ))}
             </nav>
