@@ -1,7 +1,9 @@
 import 'dotenv/config';
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import { GoogleGenAI, Modality } from '@google/genai';
+import dns from 'dns/promises';
+import net from 'net';
 
 // USE API_KEY as per guidelines
 if (!process.env.API_KEY) {
@@ -9,73 +11,131 @@ if (!process.env.API_KEY) {
 }
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const app: express.Application = express();
+// FIX: Explicitly typing `app` as `Express` resolves a TypeScript overload error on `app.use`.
+// This ensures the middleware function signature is correctly inferred.
+const app: Express = express();
 app.use(cors());
 // Increased payload limit for base64 image data
-// FIX: Removed path argument to resolve 'No overload matches this call' error. The path was causing a type signature mismatch.
 app.use(express.json({ limit: '15mb' }));
 
-// Simplified dummy endpoint as per user's provided code.
+
+/**
+ * Performs an SMTP handshake to verify if a mailbox exists.
+ * @param email The email address to verify.
+ * @param exchange The mail server hostname from MX records.
+ * @returns A promise that resolves with the validation result.
+ */
+function checkSmtp(email: string, exchange: string): Promise<{ valid: boolean, reason: string }> {
+    return new Promise((resolve) => {
+        const socket = net.createConnection(25, exchange);
+        let state = 'connecting'; // FSM: connecting -> helo -> mail_from -> rcpt_to -> done
+
+        const timeout = setTimeout(() => {
+            if (state !== 'done') {
+                state = 'done';
+                socket.destroy();
+                resolve({ valid: false, reason: 'smtp_timeout' });
+            }
+        }, 8000);
+
+        const endConnection = (result: { valid: boolean, reason: string }) => {
+            if (state !== 'done') {
+                state = 'done';
+                clearTimeout(timeout);
+                if (!socket.destroyed) {
+                    socket.write('QUIT\r\n');
+                    socket.end();
+                }
+                resolve(result);
+            }
+        };
+
+        socket.on('error', () => endConnection({ valid: false, reason: 'smtp_connection_error' }));
+        socket.on('close', () => endConnection({ valid: false, reason: 'connection_closed_unexpectedly' }));
+
+        socket.on('data', (data) => {
+            const response = data.toString();
+            switch (state) {
+                case 'connecting':
+                    if (response.startsWith('220')) {
+                        state = 'helo';
+                        socket.write(`HELO my-test-domain.com\r\n`);
+                    } else {
+                        endConnection({ valid: false, reason: 'smtp_greeting_error' });
+                    }
+                    break;
+                case 'helo':
+                    if (response.startsWith('250')) {
+                        state = 'mail_from';
+                        socket.write(`MAIL FROM:<verify@example.com>\r\n`);
+                    } else {
+                        endConnection({ valid: false, reason: 'smtp_helo_error' });
+                    }
+                    break;
+                case 'mail_from':
+                    if (response.startsWith('250')) {
+                        state = 'rcpt_to';
+                        socket.write(`RCPT TO:<${email}>\r\n`);
+                    } else {
+                        endConnection({ valid: false, reason: 'smtp_mail_from_error' });
+                    }
+                    break;
+                case 'rcpt_to':
+                    if (response.startsWith('250')) {
+                        endConnection({ valid: true, reason: 'valid_mailbox' });
+                    } else if (response.startsWith('550')) {
+                        endConnection({ valid: false, reason: 'invalid_mailbox' });
+                    } else {
+                        // Other codes (e.g., 4xx temp fails, other 5xx) are ambiguous.
+                        endConnection({ valid: false, reason: 'ambiguous_smtp_response' });
+                    }
+                    break;
+            }
+        });
+    });
+}
+
+// === TOOL API ENDPOINTS ===
+
+app.get('/api/email-format', (req, res) => {
+    // This URL can be updated here on the backend without needing to redeploy the frontend.
+    const formatUrl = "https://docs.google.com/document/d/1vx3_4aDa9dy0NQ7GcuNwodjV-4y1cAyFMJxPXKTadIs/edit?usp=sharing";
+    res.json({ downloadUrl: formatUrl });
+});
+
 app.post('/api/validate-email', async (req, res) => {
   const { email } = req.body || {};
+
   if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ ok: false, reason: 'Invalid syntax' });
+    return res.status(200).json({ status: 'invalid', message: 'Invalid Format', details: 'Please enter a valid email address format.' });
   }
-  // This is a simplified check. The original complex validation is removed.
-  return res.json({ ok: true });
-});
+  
+  const domain = email.split('@')[1];
 
-app.post('/api/generate-image', async (req, res) => {
   try {
-    const { prompt, numberOfImages = 1, aspectRatio = '1:1', artStyle = 'None', negativePrompt = '' } = req.body || {};
-    if (!prompt) return res.status(400).json({ error: 'Prompt is required' });
-
-    let finalPrompt = String(prompt);
-    if (artStyle && artStyle !== 'None') finalPrompt += `, in the style of ${artStyle}`;
-    if (negativePrompt) finalPrompt += `. Avoid the following: ${negativePrompt}.`;
-
-    const r = await ai.models.generateImages({
-      model: 'imagen-4.0-generate-001',
-      prompt: finalPrompt,
-      config: { numberOfImages, outputMimeType: 'image/png', aspectRatio }
-    });
-
-    const images = (r.generatedImages || [])
-      .map(g => g?.image?.imageBytes)
-      .filter(Boolean)
-      .map(b => `data:image/png;base64,${b as string}`);
-
-    if (!images.length) return res.status(502).json({ error: 'No images generated' });
-    res.json({ images });
-  } catch (e: any) {
-    console.error("Image generation failed:", e);
-    res.status(500).json({ error: e?.message || 'Image generation failed' });
-  }
-});
-
-app.post('/api/edit-image', async (req, res) => {
-  try {
-    const { prompt, base64ImageData, mimeType = 'image/png', maskBase64 } = req.body || {};
-    if (!prompt || !base64ImageData) return res.status(400).json({ error: 'prompt and base64ImageData are required' });
-
-    const parts: any[] = [
-      { inlineData: { data: base64ImageData, mimeType } },
-      ...(maskBase64 ? [{ inlineData: { data: maskBase64, mimeType: 'image/png' } }] : []),
-      { text: prompt }
-    ];
-
-    const r = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image-preview',
-      contents: { parts },
-      config: { responseModalities: [Modality.IMAGE, Modality.TEXT] }
-    });
-
-    const media = r?.candidates?.[0]?.content?.parts?.find((p: any) => p?.inlineData?.data && p?.inlineData?.mimeType);
-    if (!media) return res.status(502).json({ error: 'No image returned' });
-    res.json({ image: `data:${media.inlineData.mimeType};base64,${media.inlineData.data}` });
-  } catch (e: any) {
-    console.error("Image edit failed:", e);
-    res.status(500).json({ error: e?.message || 'Image edit failed' });
+    const mxRecords = await dns.resolveMx(domain);
+    if (!mxRecords || mxRecords.length === 0) {
+      return res.status(200).json({ status: 'invalid', message: 'Invalid Domain', details: 'This domain does not have MX records and cannot receive mail.' });
+    }
+    
+    const sortedMx = mxRecords.sort((a, b) => a.priority - b.priority);
+    const smtpResult = await checkSmtp(email, sortedMx[0].exchange);
+    
+    if (smtpResult.valid) {
+      return res.json({ status: 'valid', message: 'Email is Deliverable', details: 'Mailbox confirmed to exist via SMTP check.' });
+    } else {
+      if (smtpResult.reason === 'invalid_mailbox') {
+        return res.json({ status: 'invalid', message: 'Mailbox Not Found', details: 'The mail server reported that this specific email address does not exist.' });
+      }
+      // For timeouts, connection errors, or ambiguous responses, classify as "risky"
+      return res.json({ status: 'risky', message: 'Verification Inconclusive', details: 'Could not confirm mailbox existence. The server may be a catch-all or temporarily unavailable.' });
+    }
+  } catch (error: any) {
+    if (error.code === 'ENOTFOUND' || error.code === 'ENODATA') {
+      return res.status(200).json({ status: 'invalid', message: 'Domain Not Found', details: 'The domain name for this email address does not exist.' });
+    }
+    console.error('Email validation unexpected error:', error);
+    return res.status(500).json({ status: 'invalid', message: 'Server Error', details: 'An unexpected error occurred during validation.' });
   }
 });
 

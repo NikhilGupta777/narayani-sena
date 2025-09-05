@@ -2,7 +2,9 @@
 import React from 'react';
 import { CheckCircleIcon, EmailIcon, ListIcon, AnalyticsIcon } from './icons';
 
-type EmailTool = 'dashboard' | 'validator' | 'designer' | 'manager' | 'analytics';
+// FIX: Aligned the EmailTool type with the parent component (`EmailWorkspace`) by removing 'manager'.
+// This ensures that the `setActiveTool` prop has a compatible function signature.
+type EmailTool = 'dashboard' | 'validator' | 'designer' | 'analytics';
 
 interface EmailDashboardProps {
     setActiveTool: (tool: EmailTool) => void;
@@ -48,12 +50,6 @@ const EmailDashboard: React.FC<EmailDashboardProps> = ({ setActiveTool }) => {
                     title="Campaign Designer"
                     description="Design beautiful, automated emails for festivals."
                     onClick={() => setActiveTool('designer')}
-                />
-                <ToolCard
-                    icon={<ListIcon className="w-7 h-7 text-[#aeb3c7]"/>}
-                    title="List Manager"
-                    description="View and manage your locally-stored subscriber list."
-                    onClick={() => setActiveTool('manager')}
                 />
                  <div className="relative">
                     <ToolCard

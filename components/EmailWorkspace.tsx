@@ -4,9 +4,9 @@ import EmailDashboard from './EmailDashboard';
 import EmailValidator from './EmailValidator';
 import CampaignDesigner from './CampaignDesigner';
 import ListManager from './ListManager';
-import { DashboardIcon, EmailIcon, ListIcon, AnalyticsIcon, CheckCircleIcon } from './icons';
+import { DashboardIcon, EmailIcon, AnalyticsIcon, CheckCircleIcon } from './icons';
 
-type EmailTool = 'dashboard' | 'validator' | 'designer' | 'manager' | 'analytics';
+type EmailTool = 'dashboard' | 'validator' | 'designer' | 'analytics';
 
 const EmailWorkspace: React.FC = () => {
   const [activeTool, setActiveTool] = useState<EmailTool>('dashboard');
@@ -15,7 +15,6 @@ const EmailWorkspace: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: <DashboardIcon className="w-5 h-5" /> },
     { id: 'validator', label: 'Email Validator', icon: <CheckCircleIcon className="w-5 h-5" /> },
     { id: 'designer', label: 'Campaign Designer', icon: <EmailIcon className="w-5 h-5" /> },
-    { id: 'manager', label: 'List Manager', icon: <ListIcon className="w-5 h-5" /> },
     { id: 'analytics', label: 'Analytics', icon: <AnalyticsIcon className="w-5 h-5" /> },
   ], []);
 
@@ -27,8 +26,6 @@ const EmailWorkspace: React.FC = () => {
         return <EmailValidator />;
       case 'designer':
         return <CampaignDesigner />;
-      case 'manager':
-        return <ListManager />;
       case 'analytics':
         return (
             <div className="border border-[rgba(255,255,255,0.08)] bg-gradient-to-b from-[rgba(255,255,255,0.02)] to-[rgba(255,255,255,0.01)] rounded-2xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-lg backdrop-saturate-[1.3] max-w-4xl mx-auto text-center">

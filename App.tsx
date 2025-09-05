@@ -4,10 +4,14 @@ import LandingPage from './components/LandingPage';
 import MainApp from './components/MainApp';
 import CanvasBackground from './components/CanvasBackground';
 
+type Suite = 'creative' | 'email';
+
 const App: React.FC = () => {
   const [view, setView] = useState<'landing' | 'main'>('landing');
+  const [initialSuite, setInitialSuite] = useState<Suite>('creative');
 
-  const enterMainApp = useCallback(() => {
+  const enterMainApp = useCallback((suite: Suite) => {
+    setInitialSuite(suite);
     setView('main');
   }, []);
 
@@ -22,7 +26,7 @@ const App: React.FC = () => {
         {view === 'landing' ? (
           <LandingPage onEnterWorkspace={enterMainApp} />
         ) : (
-          <MainApp onGoHome={goHome} />
+          <MainApp onGoHome={goHome} initialSuite={initialSuite} />
         )}
       </div>
     </div>

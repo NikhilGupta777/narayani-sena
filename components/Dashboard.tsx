@@ -38,18 +38,36 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTool }) => {
             </div>
 
             <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <ToolCard
-                    icon={<FeatureIcon1 />}
-                    title="AI Image Generation"
-                    description="Create devotional posters from text descriptions."
-                    onClick={() => setActiveTool('image-gen')}
+                 <ToolCard
+                    icon={<DownloadIcon />}
+                    title="Content Downloader"
+                    description="Save online content for offline satsang use."
+                    onClick={() => setActiveTool('downloader')}
                 />
-                <ToolCard
-                    icon={<EditIcon />}
-                    title="AI Image Editor"
-                    description="Upload and modify existing images with AI."
-                    onClick={() => setActiveTool('image-edit')}
-                />
+                <div className="relative">
+                    <ToolCard
+                        icon={<FeatureIcon1 />}
+                        title="AI Image Generation"
+                        description="Create devotional posters from text descriptions."
+                        onClick={() => {}}
+                        disabled={true}
+                    />
+                     <div className="absolute top-4 right-4 text-xs bg-yellow-500/20 text-yellow-300 px-2.5 py-1 rounded-full font-semibold">
+                        Coming Soon
+                    </div>
+                </div>
+                <div className="relative">
+                    <ToolCard
+                        icon={<EditIcon />}
+                        title="AI Image Editor"
+                        description="Upload and modify existing images with AI."
+                        onClick={() => {}}
+                        disabled={true}
+                    />
+                    <div className="absolute top-4 right-4 text-xs bg-yellow-500/20 text-yellow-300 px-2.5 py-1 rounded-full font-semibold">
+                        Coming Soon
+                    </div>
+                </div>
                 <div className="relative">
                     <ToolCard
                         icon={<VideoIcon />}
@@ -62,12 +80,6 @@ const Dashboard: React.FC<DashboardProps> = ({ setActiveTool }) => {
                         Coming Soon
                     </div>
                 </div>
-                <ToolCard
-                    icon={<DownloadIcon />}
-                    title="Content Downloader"
-                    description="Save online content for offline satsang use."
-                    onClick={() => setActiveTool('downloader')}
-                />
             </div>
         </div>
     );

@@ -19,9 +19,11 @@
     "dotenv/": "https://aistudiocdn.com/dotenv@^17.2.2/",
     "express": "https://aistudiocdn.com/express@^5.1.0",
     "cors": "https://aistudiocdn.com/cors@^2.8.5",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.16.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.17.0",
+    "dns/": "https://aistudiocdn.com/dns@^0.2.2/",
     "vite": "https://aistudiocdn.com/vite@^7.1.4",
-    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.2"
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.0.2",
+    "net": "https://aistudiocdn.com/net@^1.0.2"
   }
 }
 </script>
@@ -29,7 +31,7 @@
   <body class="bg-[#0c1022] text-[#e9ecf6] antialiased">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    <!-- IMPORTANT: No importmap. Let Vite bundle everything. -->
+    <!-- Vite will handle bundling all dependencies defined in package.json -->
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

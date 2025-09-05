@@ -4,14 +4,15 @@ import CreativeWorkspace from './CreativeWorkspace';
 import EmailWorkspace from './EmailWorkspace';
 import { BrandLogo, CreativeSuiteIcon, EmailSuiteIcon } from './icons';
 
-interface MainAppProps {
-  onGoHome: () => void;
-}
-
 type Suite = 'creative' | 'email';
 
-const MainApp: React.FC<MainAppProps> = ({ onGoHome }) => {
-  const [activeSuite, setActiveSuite] = useState<Suite>('creative');
+interface MainAppProps {
+  onGoHome: () => void;
+  initialSuite: Suite;
+}
+
+const MainApp: React.FC<MainAppProps> = ({ onGoHome, initialSuite }) => {
+  const [activeSuite, setActiveSuite] = useState<Suite>(initialSuite);
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -23,7 +23,7 @@ The backend server requires your Gemini API key.
     ```bash
     cd server
     ```
-2.  **Install dependencies:**
+2.  **Install dependencies:** This includes Express and the Gemini SDK.
     ```bash
     npm install
     ```

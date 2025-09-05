@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export const BrandLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -116,5 +115,11 @@ export const ListIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 export const AnalyticsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" {...props}>
         <path d="M2 18a.75.75 0 00.75.75h14.5a.75.75 0 000-1.5H2.75A.75.75 0 002 18zM3 15.25a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zM3.75 8a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5zM9 15.25a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H9.75a.75.75 0 01-.75-.75zM9.75 4a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5zM15 15.25a.75.75 0 01.75-.75h2.5a.75.75 0 010 1.5H15.75a.75.75 0 01-.75-.75zM15.75 10a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" />
+    </svg>
+);
+
+export const FileTextIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" {...props}>
+        <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V8.586a2 2 0 00-.586-1.414l-4.586-4.586A2 2 0 0010.586 2H4zm6 10a1 1 0 10-2 0v.01a1 1 0 102 0V12zm-2-3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" />
     </svg>
 );
